@@ -3,37 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- ★ 修改处：浏览器标签页标题 -->
   <title>个人主页</title>
 
-  <!-- ===== emoji 图标（★ 想换图标就改这个 emoji） ===== -->
+  <!-- emoji 图标 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
 
-  <!-- 没有 JS 时也能正常显示 -->
   <script>document.documentElement.classList.add('js');</script>
 
   <style>
     /* ================= 全局重置 ================= */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     /* ================= 页面背景 =================
-       想换颜色就改这两个值：
-       #8B0000 = 深红（顶部）
-       #00008B = 深蓝（底部）
+       用 CSS 变量控制颜色，方便彩蛋反转
     ============================================== */
+    :root {
+      --bg-top: #8B0000;      /* 深红 */
+      --bg-bottom: #00008B;   /* 深蓝 */
+    }
+
     body {
       position: relative;
       min-height: 100vh;
-      background: linear-gradient(180deg, #8B0000 0%, #00008B 100%);
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
       background-attachment: fixed;
       font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
                    "Microsoft YaHei", "Helvetica Neue", sans-serif;
@@ -41,15 +34,14 @@
       padding: 70px 20px 40px;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      transition: background 0.8s ease;
     }
 
     /* ================= 粒子星空画布 ================= */
     #stars {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       z-index: 0;
       pointer-events: none;
       display: block;
@@ -57,11 +49,8 @@
 
     /* ================= 鼠标跟随光晕 ================= */
     .spotlight {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 560px;
-      height: 560px;
+      position: fixed; top: 0; left: 0;
+      width: 560px; height: 560px;
       border-radius: 50%;
       background: radial-gradient(circle,
                   rgba(255, 255, 255, 0.14) 0%,
@@ -73,23 +62,15 @@
       transition: opacity 0.5s ease;
       will-change: transform;
     }
+    .spotlight.on { opacity: 1; }
 
-    .spotlight.on {
-      opacity: 1;
-    }
-
-    /* 内容层：全部浮在粒子与光晕之上 */
-    .welcome,
-    .greeting,
-    .container,
-    .footer,
-    .to-top,
-    .toast {
+    /* 内容层浮在粒子与光晕之上 */
+    .welcome, .greeting, .container, .footer, .to-top, .toast, .float-text {
       position: relative;
       z-index: 2;
     }
 
-    /* ================= 顶部 WELCOME ================= */
+    /* ================= 顶部 WELCOME (打字机) ================= */
     .welcome {
       text-align: center;
       font-size: 2.5rem;
@@ -98,16 +79,25 @@
       padding-left: 0.3em;
       margin-bottom: 14px;
       text-shadow: 0 0 40px rgba(255, 255, 255, 0.35);
-      animation: fadeDown 0.9s ease both;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
+      min-height: 1.2em; /* 防止打字机清空时页面跳动 */
     }
 
-    .welcome.shake {
-      animation: shake 0.55s ease;
+    /* 打字机光标 */
+    .welcome .cursor {
+      display: inline-block;
+      width: 3px;
+      background-color: #fff;
+      margin-left: 6px;
+      animation: blink 0.8s infinite;
+      vertical-align: middle;
+      height: 0.9em;
     }
+
+    .welcome.shake { animation: shake 0.55s ease; }
 
     /* ================= 动态问候语 ================= */
     .greeting {
@@ -121,10 +111,7 @@
     }
 
     /* ================= 内容容器 ================= */
-    .container {
-      max-width: 760px;
-      margin: 0 auto;
-    }
+    .container { max-width: 760px; margin: 0 auto; }
 
     /* ================= 卡片通用样式 ================= */
     .card {
@@ -137,29 +124,16 @@
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
       transition: box-shadow 0.3s ease;
     }
+    .card + .card { margin-top: 28px; }
+    .card:hover { box-shadow: 0 22px 55px rgba(0, 0, 0, 0.4); }
 
-    .card + .card {
-      margin-top: 28px;
-    }
-
-    .card:hover {
-      box-shadow: 0 22px 55px rgba(0, 0, 0, 0.4);
-    }
-
-    /* ===== 滚动淡入：只有 JS 可用时才初始隐藏 ===== */
     .js .card {
       opacity: 0;
       transform: translateY(28px);
-      transition: opacity 0.75s ease, transform 0.75s ease,
-                  box-shadow 0.3s ease;
+      transition: opacity 0.75s ease, transform 0.75s ease, box-shadow 0.3s ease;
     }
+    .js .card.visible { opacity: 1; transform: translateY(0); }
 
-    .js .card.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* 卡片小标题 */
     .card-title {
       font-size: 1.15rem;
       font-weight: 700;
@@ -176,53 +150,19 @@
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 18px 28px;
     }
+    .info-item { display: flex; flex-direction: column; gap: 6px; }
+    .label { font-size: 0.8rem; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.55); }
+    .value { font-size: 1.02rem; color: #ffffff; word-break: break-all; }
 
-    .info-item {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .label {
-      font-size: 0.8rem;
-      letter-spacing: 0.12em;
-      color: rgba(255, 255, 255, 0.55);
-    }
-
-    .value {
-      font-size: 1.02rem;
-      color: #ffffff;
-      word-break: break-all;
-    }
-
-    /* ===== 邮箱那一行：文字 + 复制按钮 ===== */
-    .email-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
+    .email-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .copy-btn {
-      flex-shrink: 0;
-      padding: 5px 13px;
-      font-size: 0.78rem;
-      font-family: inherit;
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 999px;
-      cursor: pointer;
-      transition: background 0.25s ease, transform 0.2s ease;
+      flex-shrink: 0; padding: 5px 13px; font-size: 0.78rem; font-family: inherit;
+      color: #ffffff; background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px;
+      cursor: pointer; transition: background 0.25s ease, transform 0.2s ease;
     }
-
-    .copy-btn:hover {
-      background: rgba(255, 255, 255, 0.24);
-    }
-
-    .copy-btn:active {
-      transform: scale(0.94);
-    }
+    .copy-btn:hover { background: rgba(255, 255, 255, 0.24); }
+    .copy-btn:active { transform: scale(0.94); }
 
     /* ================= 常用工具 ================= */
     .tool-grid {
@@ -230,189 +170,88 @@
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 16px;
     }
-
     .tool-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 16px 18px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 16px 18px; border-radius: 14px;
+      background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15);
       transition: background 0.25s ease, transform 0.25s ease;
     }
-
-    .tool-item:hover {
-      background: rgba(255, 255, 255, 0.15);
-      transform: translateY(-3px);
-    }
-
-    .tool-icon {
-      font-size: 1.5rem;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-
-    .tool-info {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 0;
-    }
-
-    .tool-name {
-      font-size: 0.98rem;
-      font-weight: 600;
-      color: #ffffff;
-    }
-
-    .tool-desc {
-      font-size: 0.82rem;
-      line-height: 1.6;
-      color: rgba(255, 255, 255, 0.6);
-    }
+    .tool-item:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-3px); }
+    .tool-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+    .tool-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .tool-name { font-size: 0.98rem; font-weight: 600; color: #ffffff; }
+    .tool-desc { font-size: 0.82rem; line-height: 1.6; color: rgba(255, 255, 255, 0.6); }
 
     /* ================= 爱好（标签） ================= */
-    .hobby-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
+    .hobby-list { display: flex; flex-wrap: wrap; gap: 12px; }
     .hobby-tag {
-      padding: 8px 20px;
-      border-radius: 999px;
-      font-size: 0.92rem;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      color: #ffffff;
-      transition: background 0.25s ease, transform 0.25s ease;
+      padding: 8px 20px; border-radius: 999px; font-size: 0.92rem;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #ffffff; transition: background 0.25s ease, transform 0.25s ease;
     }
-
-    .hobby-tag:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-    }
+    .hobby-tag:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
 
     /* ================= 志向 ================= */
-    .ambition-text {
-      font-size: 1rem;
-      line-height: 1.9;
-      color: rgba(255, 255, 255, 0.9);
-    }
+    .ambition-text { font-size: 1rem; line-height: 1.9; color: rgba(255, 255, 255, 0.9); }
 
     /* ================= GitHub 仓库标签 ================= */
-    .repo-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-    }
-
+    .repo-list { display: flex; flex-wrap: wrap; gap: 14px; }
     .repo-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 13px 24px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #ffffff;
-      font-size: 0.95rem;
-      text-decoration: none;
-      transition: transform 0.25s ease, background 0.25s ease,
-                  box-shadow 0.25s ease;
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 13px 24px; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff; font-size: 0.95rem; text-decoration: none;
+      transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
     }
-
-    .repo-tag:hover {
-      transform: translateY(-3px);
-      background: rgba(255, 255, 255, 0.18);
-      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
-    }
-
-    .repo-icon {
-      font-size: 1.05rem;
-    }
+    .repo-tag:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.18); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3); }
+    .repo-icon { font-size: 1.05rem; }
 
     /* ================= 页脚 ================= */
     .footer {
-      max-width: 760px;
-      margin: 48px auto 0;
-      text-align: center;
-      font-size: 0.85rem;
-      line-height: 1.9;
-      color: rgba(255, 255, 255, 0.5);
+      max-width: 760px; margin: 48px auto 0; text-align: center;
+      font-size: 0.85rem; line-height: 1.9; color: rgba(255, 255, 255, 0.5);
     }
-
     .clock {
-      font-size: 1.05rem;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      color: rgba(255, 255, 255, 0.85);
-      font-variant-numeric: tabular-nums;
-      margin-bottom: 12px;
+      font-size: 1.05rem; font-weight: 600; letter-spacing: 0.18em;
+      color: rgba(255, 255, 255, 0.85); font-variant-numeric: tabular-nums;
+      margin-bottom: 12px; cursor: pointer; transition: color 0.3s ease;
     }
+    .clock:hover { color: #ffffff; }
+
+    .easter-hint { font-size: 0.75rem; color: rgba(255, 255, 255, 0.3); margin-top: 8px; }
 
     /* ================= 回到顶部按钮 ================= */
     .to-top {
-      position: fixed;
-      right: 26px;
-      bottom: 26px;
-      width: 46px;
-      height: 46px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.28);
-      border-radius: 50%;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(12px);
-      transition: opacity 0.35s ease, transform 0.35s ease,
-                  visibility 0.35s ease, background 0.25s ease;
+      position: fixed; right: 26px; bottom: 26px; width: 46px; height: 46px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #ffffff; background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 50%;
+      cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      opacity: 0; visibility: hidden; transform: translateY(12px);
+      transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s ease, background 0.25s ease;
       z-index: 99;
     }
+    .to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    .to-top:hover { background: rgba(255, 255, 255, 0.28); }
 
-    .to-top.show {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .to-top:hover {
-      background: rgba(255, 255, 255, 0.28);
-    }
-
-    /* ================= 复制成功提示 ================= */
+    /* ================= 提示与彩蛋反馈 ================= */
     .toast {
-      position: fixed;
-      left: 50%;
-      top: 32px;
-      transform: translate(-50%, -18px);
-      padding: 11px 26px;
-      font-size: 0.9rem;
-      color: #ffffff;
-      background: rgba(0, 0, 0, 0.68);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 999px;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease, transform 0.3s ease,
-                  visibility 0.3s ease;
+      position: fixed; left: 50%; top: 32px;
+      transform: translate(-50%, -18px); padding: 11px 26px;
+      font-size: 0.9rem; color: #ffffff; background: rgba(0, 0, 0, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 999px;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
       z-index: 200;
     }
+    .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 
-    .toast.show {
-      opacity: 1;
-      visibility: visible;
-      transform: translate(-50%, 0);
+    /* 双击飘字 */
+    .float-text {
+      position: fixed; pointer-events: none; font-size: 0.9rem;
+      color: #ffffff; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      animation: floatUp 1.5s ease-out forwards; z-index: 300;
     }
 
     /* ================= 动画 ================= */
@@ -420,7 +259,6 @@
       from { opacity: 0; transform: translateY(-18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
     @keyframes shake {
       0%, 100% { transform: translateX(0) rotate(0); }
       15%      { transform: translateX(-9px) rotate(-1.2deg); }
@@ -430,43 +268,26 @@
       78%      { transform: translateX(-3px) rotate(-0.3deg); }
       90%      { transform: translateX(3px) rotate(0.3deg); }
     }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0; }
+    }
+    @keyframes floatUp {
+      0%   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -80px) scale(1.2); }
+    }
 
     /* ================= 手机端适配 ================= */
     @media (max-width: 600px) {
-      body {
-        padding: 48px 16px 32px;
-      }
-      .welcome {
-        font-size: 1.8rem;
-        margin-bottom: 12px;
-      }
-      .greeting {
-        font-size: 0.85rem;
-        margin-bottom: 36px;
-      }
-      .card {
-        padding: 26px 20px;
-      }
-      .info-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-      .tool-grid {
-        grid-template-columns: 1fr;
-      }
-      .to-top {
-        right: 16px;
-        bottom: 16px;
-        width: 42px;
-        height: 42px;
-      }
-      .spotlight {
-        width: 380px;
-        height: 380px;
-      }
+      body { padding: 48px 16px 32px; }
+      .welcome { font-size: 1.8rem; margin-bottom: 12px; }
+      .greeting { font-size: 0.85rem; margin-bottom: 36px; }
+      .card { padding: 26px 20px; }
+      .info-grid, .tool-grid { grid-template-columns: 1fr; gap: 16px; }
+      .to-top { right: 16px; bottom: 16px; width: 42px; height: 42px; }
+      .spotlight { width: 380px; height: 380px; }
     }
 
-    /* 用户关闭动画时，全部禁用动效（无障碍友好） */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -479,49 +300,27 @@
 
 <body>
 
-  <!-- ========== 粒子星空画布（固定在背景层） ========== -->
   <canvas id="stars"></canvas>
-
-  <!-- ========== 鼠标跟随光晕 ========== -->
   <div class="spotlight" id="spotlight"></div>
 
-  <!-- ========== 顶部大标题（只有这一个词，点击会抖动） ========== -->
-  <h1 class="welcome" id="welcome">WELCOME</h1>
+  <!-- 打字机容器，JS 会填充文字 -->
+  <h1 class="welcome" id="welcome"></h1>
 
-  <!-- ========== 动态问候语 ========== -->
   <p class="greeting" id="greeting"></p>
 
   <main class="container">
-
     <!-- ========== 个人信息 ========== -->
     <section class="card">
       <h2 class="card-title">个人信息</h2>
-
       <div class="info-grid">
-        <div class="info-item">
-          <span class="label">姓名</span>
-          <span class="value">张智博</span>
-        </div>
-        <div class="info-item">
-          <span class="label">性别</span>
-          <span class="value">男</span>
-        </div>
-        <div class="info-item">
-          <span class="label">学校</span>
-          <span class="value">河南大学</span>
-        </div>
-        <div class="info-item">
-          <span class="label">专业</span>
-          <span class="value">工程智能软件</span>
-        </div>
-        <div class="info-item">
-          <span class="label">电话</span>
-          <span class="value">16697807710</span>
-        </div>
+        <div class="info-item"><span class="label">姓名</span><span class="value">张智博</span></div>
+        <div class="info-item"><span class="label">性别</span><span class="value">男</span></div>
+        <div class="info-item"><span class="label">学校</span><span class="value">河南大学</span></div>
+        <div class="info-item"><span class="label">专业</span><span class="value">工程智能软件</span></div>
+        <div class="info-item"><span class="label">电话</span><span class="value">16697807710</span></div>
         <div class="info-item">
           <span class="label">邮箱</span>
           <span class="email-row">
-            <!-- ★ 把 *** 换成你的邮箱，复制按钮会自动读取 -->
             <span class="value" id="email-value">2253024908@qq.com</span>
             <button class="copy-btn" id="copy-email" type="button">复制</button>
           </span>
@@ -532,67 +331,22 @@
     <!-- ========== 常用工具 ========== -->
     <section class="card">
       <h2 class="card-title">常用工具</h2>
-
       <div class="tool-grid">
-        <!-- ★ 每个工具复制一整块 <div class="tool-item">，改图标、名字、说明 -->
-        <div class="tool-item">
-          <span class="tool-icon">💻</span>
-          <div class="tool-info">
-            <span class="tool-name">PyCharm</span>
-            <span class="tool-desc">写 Python 的主力 IDE</span>
-          </div>
-        </div>
-
-        <div class="tool-item">
-          <span class="tool-icon">📝</span>
-          <div class="tool-info">
-            <span class="tool-name">VS Code</span>
-            <span class="tool-desc">轻量编辑器，前端首选</span>
-          </div>
-        </div>
-
-        <div class="tool-item">
-          <span class="tool-icon">⚙️</span>
-          <div class="tool-info">
-            <span class="tool-name">GCC / MinGW</span>
-            <span class="tool-desc">C 语言编译器</span>
-          </div>
-        </div>
-
-        <div class="tool-item">
-          <span class="tool-icon">🐍</span>
-          <div class="tool-info">
-            <span class="tool-name">Python 3</span>
-            <span class="tool-desc">日常脚本与算法练习</span>
-          </div>
-        </div>
-
-        <div class="tool-item">
-          <span class="tool-icon">🌿</span>
-          <div class="tool-info">
-            <span class="tool-name">Git / Git Bash</span>
-            <span class="tool-desc">版本控制与部署</span>
-          </div>
-        </div>
-
-        <div class="tool-item">
-          <span class="tool-icon">🔧</span>
-          <div class="tool-info">
-            <span class="tool-name">Dev-C++</span>
-            <span class="tool-desc">课程实验常用</span>
-          </div>
-        </div>
+        <div class="tool-item"><span class="tool-icon">💻</span><div class="tool-info"><span class="tool-name">PyCharm</span><span class="tool-desc">写 Python 的主力 IDE</span></div></div>
+        <div class="tool-item"><span class="tool-icon">📝</span><div class="tool-info"><span class="tool-name">VS Code</span><span class="tool-desc">轻量编辑器，前端首选</span></div></div>
+        <div class="tool-item"><span class="tool-icon">⚙️</span><div class="tool-info"><span class="tool-name">GCC / MinGW</span><span class="tool-desc">C 语言编译器</span></div></div>
+        <div class="tool-item"><span class="tool-icon">🐍</span><div class="tool-info"><span class="tool-name">Python 3</span><span class="tool-desc">日常脚本与算法练习</span></div></div>
+        <div class="tool-item"><span class="tool-icon">🌿</span><div class="tool-info"><span class="tool-name">Git / Git Bash</span><span class="tool-desc">版本控制与部署</span></div></div>
+        <div class="tool-item"><span class="tool-icon">🔧</span><div class="tool-info"><span class="tool-name">Dev-C++</span><span class="tool-desc">课程实验常用</span></div></div>
       </div>
     </section>
 
     <!-- ========== 爱好 ========== -->
     <section class="card">
       <h2 class="card-title">爱好</h2>
-
       <div class="hobby-list">
-        <!-- ★ 加爱好就复制一行，删就删一行 -->
         <span class="hobby-tag">Python编程</span>
-        <span class="hobby-tag">读书（纸质书）</span>
+        <span class="hobby-tag">徒步</span>
         <span class="hobby-tag">街健</span>
       </div>
     </section>
@@ -600,64 +354,108 @@
     <!-- ========== 志向 ========== -->
     <section class="card">
       <h2 class="card-title">志向</h2>
-      <p class="ambition-text">希望可以步步高升，去到自己想去的地方，成为自己想成为的人</p>
+      <p class="ambition-text">去到想去的地方，看看祖国的山河。成为自己想成为的人，做到自己想做到的事</p>
     </section>
 
     <!-- ========== GitHub 仓库 ========== -->
     <section class="card">
       <h2 class="card-title">我的 GitHub 仓库</h2>
-
       <div class="repo-list">
-        <!-- ★ href 换成仓库网址，标签文字换成仓库名 -->
-        <a class="repo-tag" href="https://github.com/zzricls/Calculator" target="_blank" rel="noopener">
-          <span class="repo-icon">📦</span>
-          <span>Calculator（仓库名）</span>
+        <a class="repo-tag" href="https://github.com/zzricls/Calculator/blob/main/Calculator5.0.py" target="_blank" rel="noopener">
+          <span class="repo-icon">📦</span><span>Calculator计算器</span>
         </a>
-        <a class="repo-tag" href="https://github.com/zzricls/Logging-configs" target="_blank" rel="noopener">
-          <span class="repo-icon">📦</span>
-          <span>Logging_configs（仓库名）</span>
+        <a class="repo-tag" href="https://github.com/zzricls/Logging-configs/blob/main/Log_utils.py" target="_blank" rel="noopener">
+          <span class="repo-icon">📦</span><span>日志处理</span>
+        </a>
+        <a class="repo-tag" href="https://zzricls.github.io/weather/" target="_blank" rel="noopener">
+          <span class="repo-icon">📦</span><span>天气网站</span>
         </a>
       </div>
     </section>
-
   </main>
 
   <!-- ========== 页脚 ========== -->
   <footer class="footer">
-    <p class="clock" id="clock">--:--:--</p>
-
-    <!-- ★ 改成你的名字和年份 -->
-    <p>© 2025 *** · 河南大学 工程智能软件</p>
+    <p class="clock" id="clock" title="点我试试？">--:--:--</p>
+    <p>© 2025 zzb · 河南大学 工程智能软件</p>
     <p>本页面由 AI 辅助生成（Vibe Coding）</p>
+    <!-- 彩蛋提示 -->
+    <p class="easter-hint">💡 彩蛋提示：尝试在键盘上依次按下 W A S D</p>
   </footer>
 
-  <!-- ========== 回到顶部按钮 ========== -->
   <button class="to-top" id="to-top" type="button" title="回到顶部">↑</button>
-
-  <!-- ========== 复制成功提示 ========== -->
   <div class="toast" id="toast">已复制到剪贴板</div>
 
   <script>
     /* ==========================================================
-       1. 粒子星空
+       1. 打字机效果（替换原来的静态 WELCOME）
+    ========================================================== */
+    (function () {
+      var el = document.getElementById('welcome');
+      if (!el) return;
+
+      var text = 'WELCOME';
+      var idx = 0;
+      var isDeleting = false;
+      var timer = null;
+
+      function type() {
+        // 清空并构建当前文字
+        var currentText = text.substring(0, idx);
+
+        // 用 innerHTML 是为了能插入光标 span
+        el.innerHTML = currentText + '<span class="cursor"></span>';
+
+        if (!isDeleting && idx < text.length) {
+          // 正在打字
+          idx++;
+          timer = setTimeout(type, 150);
+        } else if (isDeleting && idx > 0) {
+          // 正在删除
+          idx--;
+          timer = setTimeout(type, 80);
+        } else if (!isDeleting && idx === text.length) {
+          // 打完字，停留 2 秒后开始删除
+          isDeleting = true;
+          timer = setTimeout(type, 2000);
+        } else if (isDeleting && idx === 0) {
+          // 删完了，停 1 秒重新开始
+          isDeleting = false;
+          timer = setTimeout(type, 1000);
+        }
+      }
+
+      // 延迟 600ms 开始，让页面先加载完
+      setTimeout(type, 600);
+
+      // 点击抖动依然有效（直接绑定在容器上，不受内容变化影响）
+      el.addEventListener('click', function () {
+        el.classList.remove('shake');
+        void el.offsetWidth; // 强制重排
+        el.classList.add('shake');
+      });
+      el.addEventListener('animationend', function (e) {
+        if (e.animationName === 'shake') el.classList.remove('shake');
+      });
+    })();
+
+    /* ==========================================================
+       2. 粒子星空
     ========================================================== */
     (function () {
       var canvas = document.getElementById('stars');
       if (!canvas) return;
-
       var ctx = canvas.getContext('2d');
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
       var W = 0, H = 0;
       var particles = [];
       var mouse = { x: -9999, y: -9999 };
+      var speedMultiplier = 1; // 彩蛋加速用
 
       function resize() {
-        W = window.innerWidth;
-        H = window.innerHeight;
-        canvas.width  = W * dpr;
-        canvas.height = H * dpr;
-        canvas.style.width  = W + 'px';
-        canvas.style.height = H + 'px';
+        W = window.innerWidth; H = window.innerHeight;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         initParticles();
       }
@@ -666,14 +464,11 @@
         var count = Math.floor(W / 16);
         count = Math.max(30, Math.min(90, count));
         if (W < 600) count = Math.min(count, 45);
-
         particles = [];
         for (var i = 0; i < count; i++) {
           particles.push({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            vx: (Math.random() - 0.5) * 0.35,
-            vy: (Math.random() - 0.5) * 0.35,
+            x: Math.random() * W, y: Math.random() * H,
+            vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
             r: Math.random() * 1.4 + 0.6
           });
         }
@@ -681,174 +476,112 @@
 
       function draw() {
         ctx.clearRect(0, 0, W, H);
-
         var i, j, p, a, b, dx, dy, d2, alpha;
 
         for (i = 0; i < particles.length; i++) {
           p = particles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-
-          if (p.x < -10) p.x = W + 10;
-          if (p.x > W + 10) p.x = -10;
-          if (p.y < -10) p.y = H + 10;
-          if (p.y > H + 10) p.y = -10;
-
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-          ctx.fill();
+          p.x += p.vx * speedMultiplier;
+          p.y += p.vy * speedMultiplier;
+          if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
+          if (p.y < -10) p.y = H + 10; if (p.y > H + 10) p.y = -10;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.65)'; ctx.fill();
         }
 
         for (i = 0; i < particles.length; i++) {
           a = particles[i];
           for (j = i + 1; j < particles.length; j++) {
-            b = particles[j];
-            dx = a.x - b.x;
-            dy = a.y - b.y;
-            d2 = dx * dx + dy * dy;
+            b = particles[j]; dx = a.x - b.x; dy = a.y - b.y; d2 = dx * dx + dy * dy;
             if (d2 < 14000) {
               alpha = (1 - d2 / 14000) * 0.18;
               ctx.strokeStyle = 'rgba(255, 255, 255, ' + alpha + ')';
-              ctx.lineWidth = 0.8;
-              ctx.beginPath();
-              ctx.moveTo(a.x, a.y);
-              ctx.lineTo(b.x, b.y);
-              ctx.stroke();
+              ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
             }
           }
         }
 
         if (mouse.x > -1000) {
           for (i = 0; i < particles.length; i++) {
-            p = particles[i];
-            dx = p.x - mouse.x;
-            dy = p.y - mouse.y;
-            d2 = dx * dx + dy * dy;
+            p = particles[i]; dx = p.x - mouse.x; dy = p.y - mouse.y; d2 = dx * dx + dy * dy;
             if (d2 < 20000) {
               alpha = (1 - d2 / 20000) * 0.32;
               ctx.strokeStyle = 'rgba(255, 255, 255, ' + alpha + ')';
-              ctx.lineWidth = 0.8;
-              ctx.beginPath();
-              ctx.moveTo(p.x, p.y);
-              ctx.lineTo(mouse.x, mouse.y);
-              ctx.stroke();
+              ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
             }
           }
         }
-
         requestAnimationFrame(draw);
       }
 
       window.addEventListener('resize', resize, { passive: true });
-      window.addEventListener('mousemove', function (e) {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
-      }, { passive: true });
-      window.addEventListener('mouseout', function () {
-        mouse.x = -9999;
-        mouse.y = -9999;
-      }, { passive: true });
+      window.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+      window.addEventListener('mouseout', function () { mouse.x = -9999; mouse.y = -9999; }, { passive: true });
+      resize(); draw();
 
-      resize();
-      draw();
+      // 暴露给彩蛋使用
+      window.changeParticleSpeed = function(mult) { speedMultiplier = mult; };
     })();
 
     /* ==========================================================
-       2. 鼠标跟随光晕
+       3. 鼠标跟随光晕
     ========================================================== */
     (function () {
       var el = document.getElementById('spotlight');
-      if (!el) return;
-
-      if (!window.matchMedia('(hover: hover)').matches) return;
-
-      var targetX = window.innerWidth / 2;
-      var targetY = window.innerHeight / 2;
-      var curX = targetX;
-      var curY = targetY;
-      var shown = false;
+      if (!el || !window.matchMedia('(hover: hover)').matches) return;
+      var targetX = window.innerWidth / 2, targetY = window.innerHeight / 2;
+      var curX = targetX, curY = targetY, shown = false;
 
       window.addEventListener('mousemove', function (e) {
-        targetX = e.clientX;
-        targetY = e.clientY;
-        if (!shown) {
-          el.classList.add('on');
-          shown = true;
-        }
+        targetX = e.clientX; targetY = e.clientY;
+        if (!shown) { el.classList.add('on'); shown = true; }
       }, { passive: true });
-
-      window.addEventListener('mouseleave', function () {
-        el.classList.remove('on');
-        shown = false;
-      });
+      window.addEventListener('mouseleave', function () { el.classList.remove('on'); shown = false; });
 
       (function loop() {
-        curX += (targetX - curX) * 0.12;
-        curY += (targetY - curY) * 0.12;
-        el.style.transform =
-          'translate3d(' + curX + 'px, ' + curY + 'px, 0) translate(-50%, -50%)';
+        curX += (targetX - curX) * 0.12; curY += (targetY - curY) * 0.12;
+        el.style.transform = 'translate3d(' + curX + 'px, ' + curY + 'px, 0) translate(-50%, -50%)';
         requestAnimationFrame(loop);
       })();
     })();
 
     /* ==========================================================
-       3. 动态问候语
+       4. 动态问候语
     ========================================================== */
     (function () {
       var el = document.getElementById('greeting');
       if (!el) return;
-
       var h = new Date().getHours();
-      var word;
-
-      if (h < 5)       word = '夜深了';
-      else if (h < 9)  word = '早上好';
-      else if (h < 12) word = '上午好';
-      else if (h < 14) word = '中午好';
-      else if (h < 18) word = '下午好';
-      else if (h < 23) word = '晚上好';
-      else             word = '夜深了';
-
+      var word = h < 5 ? '夜深了' : h < 9 ? '早上好' : h < 12 ? '上午好' : h < 14 ? '中午好' : h < 18 ? '下午好' : h < 23 ? '晚上好' : '夜深了';
       el.textContent = word + '，欢迎来到我的主页 👋';
     })();
 
     /* ==========================================================
-       4. 数字时钟
+       5. 数字时钟（含彩蛋：点击变二进制）
     ========================================================== */
     (function () {
       var el = document.getElementById('clock');
       if (!el) return;
+      var isBinary = false;
 
       function pad(n) { return n < 10 ? '0' + n : '' + n; }
+      function toBin(n) { return n.toString(2); } // 转二进制
 
       function tick() {
         var d = new Date();
-        el.textContent =
-          pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        if (isBinary) {
+          el.textContent = toBin(d.getHours()) + ':' + toBin(d.getMinutes()) + ':' + toBin(d.getSeconds());
+        } else {
+          el.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        }
       }
 
       tick();
       setInterval(tick, 1000);
-    })();
-
-    /* ==========================================================
-       5. 点击 WELCOME 抖动
-    ========================================================== */
-    (function () {
-      var el = document.getElementById('welcome');
-      if (!el) return;
 
       el.addEventListener('click', function () {
-        el.classList.remove('shake');
-        void el.offsetWidth;
-        el.classList.add('shake');
-      });
-
-      el.addEventListener('animationend', function (e) {
-        if (e.animationName === 'shake') {
-          el.classList.remove('shake');
-        }
+        isBinary = !isBinary;
+        tick();
+        showToast(isBinary ? '二进制模式已开启' : '正常时间模式');
       });
     })();
 
@@ -861,65 +594,37 @@
 
       function enableTilt(card) {
         if (!hoverAble) return;
-
-        var rotX = 0, rotY = 0;
-        var tarX = 0, tarY = 0;
-        var raf = null;
-
+        var rotX = 0, rotY = 0, tarX = 0, tarY = 0, raf = null;
         function loop() {
-          rotX += (tarX - rotX) * 0.18;
-          rotY += (tarY - rotY) * 0.18;
-
-          if (Math.abs(tarX - rotX) < 0.02 && Math.abs(tarY - rotY) < 0.02) {
-            rotX = tarX;
-            rotY = tarY;
-            raf = null;
-          } else {
-            raf = requestAnimationFrame(loop);
-          }
-
-          card.style.transform =
-            'perspective(1100px) rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg)';
+          rotX += (tarX - rotX) * 0.18; rotY += (tarY - rotY) * 0.18;
+          if (Math.abs(tarX - rotX) < 0.02 && Math.abs(tarY - rotY) < 0.02) { rotX = tarX; rotY = tarY; raf = null; }
+          else { raf = requestAnimationFrame(loop); }
+          card.style.transform = 'perspective(1100px) rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg)';
         }
-
         card.addEventListener('mousemove', function (e) {
           var rect = card.getBoundingClientRect();
-          var px = (e.clientX - rect.left) / rect.width  - 0.5;
-          var py = (e.clientY - rect.top)  / rect.height - 0.5;
-          tarY =  px * 8;
-          tarX = -py * 8;
+          var px = (e.clientX - rect.left) / rect.width - 0.5;
+          var py = (e.clientY - rect.top) / rect.height - 0.5;
+          tarY = px * 8; tarX = -py * 8;
           if (!raf) raf = requestAnimationFrame(loop);
         });
-
-        card.addEventListener('mouseleave', function () {
-          tarX = 0;
-          tarY = 0;
-          if (!raf) raf = requestAnimationFrame(loop);
-        });
+        card.addEventListener('mouseleave', function () { tarX = 0; tarY = 0; if (!raf) raf = requestAnimationFrame(loop); });
       }
 
-      if (!('IntersectionObserver' in window)) {
-        cards.forEach(function (c) { c.classList.add('visible'); });
-        return;
-      }
+      if (!('IntersectionObserver' in window)) { cards.forEach(function (c) { c.classList.add('visible'); }); return; }
 
       var observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
             observer.unobserve(entry.target);
-
             setTimeout(function () {
               entry.target.style.transition = 'opacity 0.5s ease, box-shadow 0.3s ease';
               enableTilt(entry.target);
             }, 800);
           }
         });
-      }, {
-        threshold: 0.12,
-        rootMargin: '0px 0px -40px 0px'
-      });
-
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
       cards.forEach(function (card) { observer.observe(card); });
     })();
 
@@ -927,47 +632,30 @@
        7. 邮箱一键复制
     ========================================================== */
     (function () {
-      var btn   = document.getElementById('copy-email');
+      var btn = document.getElementById('copy-email');
       var email = document.getElementById('email-value');
       var toast = document.getElementById('toast');
       var timer = null;
 
       if (!btn || !email) return;
-
       function showToast(msg) {
-        toast.textContent = msg;
-        toast.classList.add('show');
+        toast.textContent = msg; toast.classList.add('show');
         clearTimeout(timer);
-        timer = setTimeout(function () {
-          toast.classList.remove('show');
-        }, 1800);
+        timer = setTimeout(function () { toast.classList.remove('show'); }, 1800);
       }
 
       btn.addEventListener('click', function () {
         var text = email.textContent.trim();
-
         if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(text)
-            .then(function () { showToast('邮箱已复制'); })
-            .catch(function () { fallback(text); });
-        } else {
-          fallback(text);
-        }
+          navigator.clipboard.writeText(text).then(function () { showToast('邮箱已复制'); }).catch(function () { fallback(text); });
+        } else { fallback(text); }
       });
 
       function fallback(text) {
         var input = document.createElement('textarea');
-        input.value = text;
-        input.style.position = 'fixed';
-        input.style.opacity = '0';
-        document.body.appendChild(input);
-        input.select();
-        try {
-          document.execCommand('copy');
-          showToast('邮箱已复制');
-        } catch (e) {
-          showToast('复制失败，请手动选中');
-        }
+        input.value = text; input.style.position = 'fixed'; input.style.opacity = '0';
+        document.body.appendChild(input); input.select();
+        try { document.execCommand('copy'); showToast('邮箱已复制'); } catch (e) { showToast('复制失败，请手动选中'); }
         document.body.removeChild(input);
       }
     })();
@@ -978,18 +666,99 @@
     (function () {
       var btn = document.getElementById('to-top');
       if (!btn) return;
+      function toggleBtn() { if (window.scrollY > 300) btn.classList.add('show'); else btn.classList.remove('show'); }
+      window.addEventListener('scroll', toggleBtn, { passive: true }); toggleBtn();
+      btn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    })();
 
-      function toggleBtn() {
-        if (window.scrollY > 300) btn.classList.add('show');
-        else                      btn.classList.remove('show');
+    /* ==========================================================
+       9. 彩蛋合集
+    ========================================================== */
+    (function () {
+      /* ---- 彩蛋一：控制台留言 ---- */
+      console.log('%c 你好，同行！', 'color: #ff6b6b; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 2px #000;');
+      console.log('%c 代码之外，皆是风景。—— zzrics\n 你发现了隐藏彩蛋，真厉害！', 'color: #f5f5fa; font-size: 14px;');
+
+      /* ---- 彩蛋二：WASD 密码（依次按 W A S D） ---- */
+      var konamiCode = ['w', 'a', 's', 'd'];
+      var konamiIndex = 0;
+      var isKonamiActive = false;
+
+      document.addEventListener('keydown', function (e) {
+        // 不区分大小写
+        if (e.key.toLowerCase() === konamiCode[konamiIndex]) {
+          konamiIndex++;
+          if (konamiIndex === konamiCode.length) {
+            konamiIndex = 0;
+            triggerKonami();
+          }
+        } else {
+          konamiIndex = 0; // 按错就重来
+        }
+      });
+
+      function triggerKonami() {
+        if (isKonamiActive) return;
+        isKonamiActive = true;
+
+        // 1. 反转背景颜色（交换红蓝）
+        var root = document.documentElement;
+        var topColor = getComputedStyle(root).getPropertyValue('--bg-top').trim();
+        var bottomColor = getComputedStyle(root).getPropertyValue('--bg-bottom').trim();
+        root.style.setProperty('--bg-top', bottomColor);
+        root.style.setProperty('--bg-bottom', topColor);
+
+        // 2. 粒子加速
+        if (window.changeParticleSpeed) window.changeParticleSpeed(4);
+        setTimeout(function() { if (window.changeParticleSpeed) window.changeParticleSpeed(1); }, 4000); // 4秒后恢复
+
+        // 3. 弹出提示
+        showToast('⚡ 隐藏关卡激活！背景反转 + 粒子加速');
+
+        // 提示结束后恢复
+        setTimeout(function() {
+          isKonamiActive = false;
+        }, 5000);
       }
 
-      window.addEventListener('scroll', toggleBtn, { passive: true });
-      toggleBtn();
+      /* ---- 彩蛋三：双击空白处飘字 ---- */
+      var phrases = [
+        '今天也是努力写 Bug 的一天',
+        '代码是写给人看的，只是恰好机器能执行',
+        '大一的你，未来可期',
+        '点击我有什么用？没有，就是觉得你该休息一下眼睛',
+        'Hello World 是你梦想开始的地方'
+        '关掉这个网站，去看看世界吧'
+        '相信一切都是最好的安排'
+      ];
 
-      btn.addEventListener('click', function () {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.addEventListener('dblclick', function (e) {
+        // 只在空白处（body 或 html）触发，点卡片和按钮不触发
+        if (e.target !== document.body && e.target !== document.documentElement) return;
+
+        var span = document.createElement('span');
+        span.className = 'float-text';
+        span.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+
+        // 定位到鼠标位置
+        span.style.left = e.clientX + 'px';
+        span.style.top = (e.clientY - 20) + 'px';
+
+        document.body.appendChild(span);
+
+        // 动画结束移除元素
+        setTimeout(function () { span.remove(); }, 1500);
       });
+
+      /* ---- 通用 Toast ---- */
+      function showToast(msg) {
+        var toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(function () { toast.classList.remove('show'); }, 2500);
+      }
+
     })();
   </script>
 
